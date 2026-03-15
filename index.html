@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>甲象 - 奇门遁甲问事</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;color:#e8e8e8;padding:20px}
+.container{max-width:600px;margin:0 auto}
+.logo{text-align:center;padding:40px 0 30px}
+.logo h1{font-size:48px;color:#d4af37;text-shadow:0 0 20px rgba(212,175,55,0.5);letter-spacing:8px}
+.logo p{font-size:14px;color:#888;margin-top:8px;letter-spacing:2px}
+.card{background:rgba(255,255,255,0.05);border-radius:16px;padding:24px;margin-bottom:20px;border:1px solid rgba(212,175,55,0.2)}
+.input-group{margin-bottom:20px}
+.input-group label{display:block;margin-bottom:8px;color:#d4af37;font-size:14px}
+.input-group input{width:100%;padding:14px 16px;border-radius:12px;border:1px solid rgba(212,175,55,0.3);background:rgba(0,0,0,0.3);color:#fff;font-size:16px;outline:none}
+.input-group input:focus{border-color:#d4af37}
+.btn{width:100%;padding:16px;border-radius:12px;border:none;background:linear-gradient(135deg,#d4af37,#f4d03f);color:#1a1a2e;font-size:18px;font-weight:bold;cursor:pointer}
+.usage-hint{text-align:center;padding:15px;background:rgba(212,175,55,0.1);border-radius:8px;font-size:13px;color:#888}
+.usage-hint span{color:#d4af37}
+.result{display:none}
+.result.show{display:block;animation:fadeIn 0.5s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)}}
+.result-header{text-align:center;padding-bottom:20px;border-bottom:1px solid rgba(212,175,55,0.2);margin-bottom:20px}
+.result-header .question{font-size:18px;color:#d4af37;margin-bottom:8px}
+.result-header .time{font-size:12px;color:#666}
+.pan-info{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.pan-item{background:rgba(0,0,0,0.3);padding:12px;border-radius:8px;text-align:center}
+.pan-item .label{font-size:11px;color:#666;margin-bottom:4px}
+.pan-item .value{font-size:16px;color:#d4af37;font-weight:bold}
+.interpretation{background:rgba(0,0,0,0.3);padding:20px;border-radius:12px;margin-bottom:20px}
+.interpretation h3{color:#d4af37;font-size:16px;margin-bottom:12px}
+.interpretation p{line-height:1.8;font-size:15px;color:#ccc}
+.footer{text-align:center;padding:30px 0;font-size:12px;color:#444}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="logo"><h1>甲象</h1><p>奇门遁甲 · 决策参考</p></div>
+<div class="card" id="inputCard">
+<div class="input-group"><label>请问你想问什么？</label>
+<input type="text" id="question" placeholder="如：事业发展、感情运势、财运如何..." maxlength="50"></div>
+<button class="btn" onclick="startDivination()">开始占卜</button>
+<div class="usage-hint" style="margin-top:15px;">剩余免费次数：<span id="freeCount">10</span> 次</div>
+</div>
+<div class="card result" id="resultCard">
+<div class="result-header"><div class="question" id="showQuestion"></div><div class="time" id="showTime"></div></div>
+<div class="pan-info">
+<div class="pan-item"><div class="label">用神</div><div class="value" id="panYongShen"></div></div>
+<div class="pan-item"><div class="label">落宫</div><div class="value" id="panGong"></div></div>
+<div class="pan-item"><div class="label">格局</div><div class="value" id="panGeJu"></div></div>
+</div>
+<div class="interpretation"><h3>📜 解读</h3><p id="interpretation"></p></div>
+<div class="interpretation"><h3>💡 建议</h3><p id="suggestion"></p></div>
+<button class="btn" onclick="resetDivination()">再次占卜</button>
+</div>
+<div class="footer">本产品仅供娱乐参考，不可作为重大决策依据</div>
+</div>
+<script>
+const tiangan=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const dizhi=['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+const bagua=['坎','坤','震','巽','中','乾','兑','艮','离'];
+const jiugong=['坎一宫','坤二宫','震三宫','巽四宫','中五宫','乾六宫','兑七宫','艮八宫','离九宫'];
+const bamen=['休','生','伤','杜','景','死','惊','开'];
+const bashen=['符','蛇','阴','合','勾','青','天','地'];
+const wuxing=['水','木','木','火','土','土','金','金','水','火'];
+const shengke={'水':{sheng:'木',ke:'火'},'木':{sheng:'火',ke:'土'},'火':{sheng:'土',ke:'金'},'土':{sheng:'金',ke:'水'},'金':{sheng:'水',ke:'木'}};
+const interpretations={'坎一宫':{'休':'此时利于修养身心，不宜冒进。当前局势平稳，但缺乏动力。适合等待、储备、暗中谋划。','生':'有生发之象，万物萌动。利于求财、创业、开启新事业。但需要耐心培育。','伤':'受伤、损伤之意。需防小人、意外、摩擦。不宜直接对抗。','杜':'堵塞、隐蔽之象。适合保密、策划、暗箱操作。不宜公开行动。','景':'华丽外表，虚假繁荣。适合宣传、广告、交际应酬。慎防表面光鲜。','死':'死板、绝望、陷阱。诸事不宜，保守为上。防诈骗、防陷阱。','惊':'惊恐、惊讶、波动。事情突发，消息来得突然。需冷静应对。','开':'开创、开放、亨通。利于求财、扩张、公开行动。把握时机。'},'坤二宫':{'休':'柔顺待时，利于暗中发展。当前形势对你不利，但可积蓄力量。','生':'地生万物，厚德载物。利于求财、得名、得地。适合稳扎稳打。','伤':'伤在坤地，地动山摇。需防变动、损失、根基不稳。','杜':'坤地杜塞，泥泞难行。障碍多阻，不宜冒进。','景':'坤地景明，地上景色。适合展示、演讲、宣传。','死':'坤为死地，诸事不吉。防病、防灾、凡事保守。','惊':'坤地震惊，天下震动。防突发事件、公众事件。','开':'坤地开泰，地上万物生。吉兆，利于行动。'},'震三宫':{'休':'震为动，休养生息。动中求静，利于策划。','生':'震木生发，万物初生。利新开始、创业、突破。','伤':'震为伤，变动、损伤。防冲突、防意外。','杜':'震木杜塞，阻塞不通。防小人、暗中阻力。','景':'震雷火光，声名远扬。利于宣传、扬名。','死':'震卦死位，凶险。防突发灾祸、意外。','惊':'震雷惊天下，震惊四方。消息突然，冷静应对。','开':'震开得声，行动有力。利于行动、出发。'},'巽四宫':{'休':'巽风休位，风平浪静。利于隐蔽、等待。','生':'巽木生发，利市利交易。适合投资、商业。','伤':'巽风伤物，摇摆不定。防损失、防摇摆。','杜':'巽为风，流通之象。利于传播、流通。','景':'巽风景明，利宣传。','死':'巽死入墓，困顿。防困、防滞。','惊':'巽风惊散，惊恐之象。防虚假信息。','开':'巽开利市，交易有利。'},'中五宫':{'休':'中正平和，休养生息。','生':'中宫生发，核心之力。','伤':'中宫伤变，中心不稳。','杜':'中宫杜塞，运转不畅。','景':'中宫景明，华而不实。','死':'中宫死寂，困顿。','惊':'中宫惊变，突发。','开':'中宫开泰，转机。'},'乾六宫':{'休':'乾卦休位，贵人运。','生':'乾金生水，利求财。','伤':'乾金伤木，刚硬易折。','杜':'乾杜西北，阻塞。','景':'乾景辉煌，利宣传。','死':'乾死金寒，困顿。','惊':'乾惊有灾，防。','开':'乾开得路，吉利。'},'兑七宫':{'休':'兑休口舌，言语休息。','生':'兑生利说，谈判有利。','伤':'兑伤损口，防口舌。','杜':'兑杜是非，保密。','景':'兑景喜悦，利娱乐。','死':'兑死牢狱，防。','惊':'兑惊破财，防。','开':'兑开成事，吉利。'},'艮八宫':{'休':'艮休止步，等待。','生':'艮生利止，适可而止。','伤':'艮伤阻路，阻碍。','杜':'艮杜不动，停滞。','景':'艮景利止，见好就收。','死':'艮死大凶，慎行。','惊':'艮惊防山，保安。','开':'艮开利行，可动。'},'离九宫':{'休':'离休中虚，外热内冷。','生':'离生虚华，虚中求实。','伤':'离伤目损，防眼。','杜':'离杜光明，隐蔽。','景':'离景光明，利宣传。','死':'离死离散，分离。','惊':'离惊火灾，防。','开':'离开虚明，开明。'}};
+const suggestions={'吉':'此时局势对你有利，把握机会，主动出击。但仍需谨慎行事，不可冒进。','平':'此时局势平稳，无明显吉凶。建议保持现状，积蓄力量，等待更好时机。','凶':'此时局势对你不利，建议保守行事，避免重大决策。防小人、防破财、保健康。'};
+let freeCount=10;
+function getGongByTime(date){const hour=date.getHours();return Math.floor((hour%12)/1.33)%9}
+function getMenByTime(date){return bamen[date.getHours()%8]}
+function getShenByTime(date){return bashen[date.getHours()%8]}
+function getGeJu(gong,men){const gejuList=['吉','平','平','凶','平','凶','平','平','吉'];return gejuList[(gong+bamen.indexOf(men))%9]}
+function getYongShen(question){const q=question.toLowerCase();if(q.includes('财')||q.includes('钱')||q.includes('收入'))return'戊';if(q.includes('事业')||q.includes('工作')||q.includes('升职'))return'丙';if(q.includes('情')||q.includes('爱')||q.includes('婚姻'))return'乙';if(q.includes('学')||q.includes('考')||q.includes('试'))return'丁';if(q.includes('健康')||q.includes('病'))return'庚';return'甲'}
+function getInterpretation(gong,men){const gongName=jiugong[gong];const menName=men;return(interpretations[gongName]&&interpretations[gongName][menName])||'此局变化微妙，需静心体会。万物皆在变化中，机遇与挑战并存。'}
+function getSuggestion(geju){return suggestions[geju]||suggestions['平']}
+function startDivination(){const question=document.getElementById('question').value.trim();if(!question){alert('请输入您的问题');return}if(freeCount<=0){alert('免费次数已用完');return}const now=new Date();const gong=getGongByTime(now);const men=getMenByTime(now);const geju=getGeJu(gong,men);const yongshen=getYongShen(question);document.getElementById('showQuestion').textContent=question;document.getElementById('showTime').textContent=now.toLocaleString('zh-CN');document.getElementById('panYongShen').textContent=yongshen;document.getElementById('panGong').textContent=jiugong[gong];document.getElementById('panGeJu').textContent=geju==='吉'?'☀ 吉':(geju==='凶'?'☁ 凶':'▦ 平');document.getElementById('interpretation').textContent=getInterpretation(gong,men);document.getElementById('suggestion').textContent=getSuggestion(geju);document.getElementById('inputCard').style.display='none';document.getElementById('resultCard').style.display='block';document.getElementById('resultCard').classList.add('show');freeCount--;localStorage.setItem('freeCount',freeCount);updateFreeCount()}
+function resetDivination(){document.getElementById('question').value='';document.getElementById('resultCard').classList.remove('show');document.getElementById('resultCard').style.display='none';document.getElementById('inputCard').style.display='block';updateFreeCount()}
+function updateFreeCount(){const saved=localStorage.getItem('freeCount');if(saved!==null){freeCount=parseInt(saved)}document.getElementById('freeCount').textContent=freeCount}updateFreeCount();document.getElementById('question').addEventListener('keypress',function(e){if(e.key==='Enter'){startDivination()}});
+</script></body></html>
